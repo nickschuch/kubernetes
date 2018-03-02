@@ -180,6 +180,8 @@ type KubeletFlags struct {
 	RegisterSchedulable bool
 	// RequireKubeConfig is deprecated! A valid KubeConfig is now required if --kubeconfig is provided.
 	RequireKubeConfig bool
+	// MounterDetectSystemdRun turn on "systemd-run" detection for linux mounted volumes
+	MounterDetectSystemdRun bool
 	// nonMasqueradeCIDR configures masquerading: traffic to IPs outside this range will use IP masquerade.
 	NonMasqueradeCIDR string
 	// This flag, if set, instructs the kubelet to keep volumes from terminated pods mounted to the node.
@@ -216,11 +218,12 @@ func NewKubeletFlags() *KubeletFlags {
 		RemoteRuntimeEndpoint:               remoteRuntimeEndpoint,
 		RotateCertificates:                  false,
 		// TODO(#54161:v1.11.0): Remove --enable-custom-metrics flag, it is deprecated.
-		EnableCustomMetrics: false,
-		NodeLabels:          make(map[string]string),
-		VolumePluginDir:     "/usr/libexec/kubernetes/kubelet-plugins/volume/exec/",
-		RegisterNode:        true,
-		SeccompProfileRoot:  filepath.Join(v1alpha1.DefaultRootDir, "seccomp"),
+		EnableCustomMetrics:     false,
+		MounterDetectSystemdRun: true,
+		NodeLabels:              make(map[string]string),
+		VolumePluginDir:         "/usr/libexec/kubernetes/kubelet-plugins/volume/exec/",
+		RegisterNode:            true,
+		SeccompProfileRoot:      filepath.Join(v1alpha1.DefaultRootDir, "seccomp"),
 	}
 }
 
@@ -341,6 +344,7 @@ func (f *KubeletFlags) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&f.ExperimentalNodeAllocatableIgnoreEvictionThreshold, "experimental-allocatable-ignore-eviction", f.ExperimentalNodeAllocatableIgnoreEvictionThreshold, "When set to 'true', Hard Eviction Thresholds will be ignored while calculating Node Allocatable. See https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/ for more details. [default=false]")
 	fs.Var(flag.NewMapStringString(&f.ExperimentalQOSReserved), "experimental-qos-reserved", "A set of ResourceName=Percentage (e.g. memory=50%) pairs that describe how pod resource requests are reserved at the QoS level. Currently only memory is supported. [default=none]")
 	bindableNodeLabels := flag.ConfigurationMap(f.NodeLabels)
+	fs.BoolVar(&f.MounterDetectSystemdRun, "mounter-detect-systemd-run", f.MounterDetectSystemdRun, "Turn on systemd-run detection for mounted volumes")
 	fs.Var(&bindableNodeLabels, "node-labels", "<Warning: Alpha feature> Labels to add when registering the node in the cluster.  Labels must be key=value pairs separated by ','.")
 	fs.StringVar(&f.VolumePluginDir, "volume-plugin-dir", f.VolumePluginDir, "<Warning: Alpha feature> The full path of the directory in which to search for additional third party volume plugins")
 	fs.StringVar(&f.LockFilePath, "lock-file", f.LockFilePath, "<Warning: Alpha feature> The path to file for kubelet to use as a lock file.")
